@@ -1,0 +1,8 @@
+/target
+.DS_Store
+/dist
+*.dmg
+*.app
+.idea
+.vscode/*
+!.vscode/extensions.json

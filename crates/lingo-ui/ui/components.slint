@@ -1,0 +1,697 @@
+import { Theme } from "theme.slint";
+
+export component AppButton inherits Rectangle {
+    in property <string> label;
+    in property <bool> primary: true;
+    in property <bool> enabled: true;
+    callback clicked;
+
+    height: 40px;
+    min-width: label-text.preferred-width + 24px;
+    border-radius: Theme.radius-s;
+    background: !enabled
+        ? Theme.field
+        : primary
+            ? (touch.has-hover ? Theme.accent-hover : Theme.accent)
+            : (touch.has-hover ? Theme.surface-alt : Theme.surface);
+    border-width: primary ? 0px : 1px;
+    border-color: Theme.border;
+
+    label-text := Text {
+        text: root.label;
+        color: !root.enabled ? Theme.subtle : (root.primary ? Theme.accent-text : Theme.text);
+        font-family: Theme.font-family;
+        font-size: 14px;
+        font-weight: 600;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component IconButton inherits Rectangle {
+    in property <string> glyph;
+    in property <string> tooltip;
+    in property <bool> enabled: true;
+    callback clicked;
+
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: touch.has-hover && root.enabled ? Theme.surface-alt : transparent;
+
+    Text {
+        text: root.glyph;
+        color: root.enabled ? Theme.muted : Theme.subtle;
+        font-size: 14px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component Avatar inherits Rectangle {
+    in property <string> initials;
+    in property <int> tone: 0;
+    in property <length> avatar-size: 40px;
+
+    width: avatar-size;
+    height: avatar-size;
+    border-radius: avatar-size / 2;
+    background: tone == 1 ? #E7F6EF
+        : tone == 2 ? #FEF3E2
+        : tone == 3 ? #FDE8E7
+        : tone == 4 ? #EAF0FE
+        : #EDF1F7;
+
+    Text {
+        text: root.initials;
+        color: tone == 1 ? #087443
+            : tone == 2 ? #A15C07
+            : tone == 3 ? #B42318
+            : tone == 4 ? #1D4ED8
+            : #344054;
+        font-family: Theme.font-family;
+        font-size: root.avatar-size * 0.34;
+        font-weight: 700;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
+
+export component StatusPill inherits Rectangle {
+    in property <string> label;
+    in property <int> tone: 0;
+
+    height: 22px;
+    min-width: 58px;
+    border-radius: 11px;
+    background: tone == 1 ? #E7F6EF
+        : tone == 2 ? #FEF3E2
+        : tone == 3 ? #FDE8E7
+        : Theme.surface-alt;
+
+    HorizontalLayout {
+        padding-left: 9px;
+        padding-right: 9px;
+        alignment: center;
+        Text {
+            text: root.label;
+            color: tone == 1 ? #087443
+                : tone == 2 ? #A15C07
+                : tone == 3 ? #B42318
+                : Theme.muted;
+            font-family: Theme.font-family;
+            font-size: 10px;
+            font-weight: 600;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+}
+
+export component ProgressBar inherits Rectangle {
+    in property <float> value: 0;
+    in property <int> tone: 0;
+
+    height: 6px;
+    border-radius: 3px;
+    background: Theme.track;
+    clip: true;
+
+    Rectangle {
+        x: 0;
+        y: 0;
+        height: parent.height;
+        width: parent.width * root.value;
+        border-radius: 3px;
+        background: root.tone == 1 ? Theme.success
+            : root.tone == 2 ? Theme.warning
+            : root.tone == 3 ? Theme.danger
+            : Theme.accent;
+    }
+}
+
+export component RailIcon inherits Rectangle {
+    in property <string> kind: "transfer";
+    in property <color> tint: Theme.muted;
+    in property <color> cutout: Theme.bg;
+
+    width: 24px;
+    height: 24px;
+
+    if root.kind == "transfer" : Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 24;
+        viewbox-height: 24;
+        fill: root.tint;
+        MoveTo { x: 4; y: 15; }
+        LineTo { x: 14; y: 5; }
+        LineTo { x: 16; y: 3; }
+        LineTo { x: 21; y: 8; }
+        LineTo { x: 19; y: 10; }
+        LineTo { x: 9; y: 20; }
+        LineTo { x: 3; y: 21; }
+        Close { }
+    }
+    if root.kind == "transfer" : Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 24;
+        viewbox-height: 24;
+        stroke: root.tint;
+        stroke-width: 1.6px;
+        MoveTo { x: 13; y: 21; }
+        LineTo { x: 21; y: 21; }
+    }
+    if root.kind == "inbox" : Rectangle {
+        x: 2px;
+        y: 3px;
+        width: 20px;
+        height: 18px;
+        border-radius: 5px;
+        border-width: 1.8px;
+        border-color: root.tint;
+    }
+    if root.kind == "inbox" : Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 24;
+        viewbox-height: 24;
+        stroke: root.tint;
+        stroke-width: 1.8px;
+        MoveTo { x: 3; y: 13; }
+        LineTo { x: 8; y: 13; }
+        LineTo { x: 10; y: 16; }
+        LineTo { x: 14; y: 16; }
+        LineTo { x: 16; y: 13; }
+        LineTo { x: 21; y: 13; }
+    }
+    if root.kind == "sent" : Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 24;
+        viewbox-height: 24;
+        fill: root.tint;
+        MoveTo { x: 3; y: 10; }
+        LineTo { x: 21; y: 3; }
+        LineTo { x: 15; y: 21; }
+        LineTo { x: 10; y: 14; }
+        Close { }
+    }
+    if root.kind == "sent" : Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 24;
+        viewbox-height: 24;
+        stroke: Theme.sidebar;
+        stroke-width: 1.2px;
+        MoveTo { x: 10; y: 14; }
+        LineTo { x: 20; y: 4; }
+    }
+    if root.kind == "devices" : Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 24;
+        viewbox-height: 24;
+        stroke: root.tint;
+        stroke-width: 1.6px;
+        MoveTo { x: 3; y: 15; }
+        LineTo { x: 3; y: 3; }
+        LineTo { x: 17; y: 3; }
+        LineTo { x: 17; y: 15; }
+        LineTo { x: 3; y: 15; }
+        MoveTo { x: 7; y: 18; }
+        LineTo { x: 7; y: 21; }
+        LineTo { x: 3; y: 21; }
+    }
+    if root.kind == "devices" : Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 24;
+        viewbox-height: 24;
+        fill: root.cutout;
+        stroke: root.tint;
+        stroke-width: 1.6px;
+        MoveTo { x: 11; y: 10; }
+        LineTo { x: 22; y: 10; }
+        LineTo { x: 22; y: 21; }
+        LineTo { x: 11; y: 21; }
+        Close { }
+    }
+    if root.kind == "devices" : Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 24;
+        viewbox-height: 24;
+        stroke: root.tint;
+        stroke-width: 1.5px;
+        MoveTo { x: 15; y: 17; }
+        LineTo { x: 15; y: 15; }
+    }
+    if root.kind == "plus" : Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 24;
+        viewbox-height: 24;
+        stroke: root.tint;
+        stroke-width: 1.8px;
+        MoveTo { x: 12; y: 5; }
+        LineTo { x: 12; y: 19; }
+        MoveTo { x: 5; y: 12; }
+        LineTo { x: 19; y: 12; }
+    }
+}
+
+export component DeviceGlyph inherits Rectangle {
+    in property <color> device-color: #23862E;
+    width: 40px;
+    height: 30px;
+
+    Rectangle {
+        x: 7px;
+        y: 1px;
+        width: 27px;
+        height: 22px;
+        border-radius: 1px;
+        background: #101611;
+        border-width: 1px;
+        border-color: #0B100C;
+    }
+    Rectangle {
+        x: 9px;
+        y: 2px;
+        width: 23px;
+        height: 19px;
+        background: root.device-color;
+    }
+    Path {
+        x: 9px;
+        y: 2px;
+        width: 23px;
+        height: 19px;
+        viewbox-width: 23;
+        viewbox-height: 19;
+        fill: #FFFFFF.with-alpha(0.12);
+        MoveTo { x: 0; y: 19; }
+        LineTo { x: 17; y: 0; }
+        LineTo { x: 23; y: 0; }
+        LineTo { x: 6; y: 19; }
+        Close { }
+    }
+    Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 40;
+        viewbox-height: 30;
+        fill: #A9B9B5;
+        MoveTo { x: 6; y: 23; }
+        LineTo { x: 35; y: 23; }
+        LineTo { x: 40; y: 28; }
+        LineTo { x: 1; y: 28; }
+        Close { }
+    }
+    Rectangle {
+        x: 1px;
+        y: 28px;
+        width: 39px;
+        height: 1px;
+        background: #D2DED9;
+    }
+}
+
+export component DropGlyph inherits Rectangle {
+    width: 40px;
+    height: 38px;
+
+    Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 40;
+        viewbox-height: 38;
+        fill: #D58B16;
+        MoveTo { x: 10; y: 7; }
+        LineTo { x: 20; y: 7; }
+        LineTo { x: 23; y: 11; }
+        LineTo { x: 34; y: 11; }
+        LineTo { x: 34; y: 26; }
+        LineTo { x: 10; y: 26; }
+        Close { }
+    }
+    Rectangle {
+        x: 1px;
+        y: 15px;
+        width: 21px;
+        height: 16px;
+        border-radius: 2px;
+        background: #19A9D4;
+        border-width: 1px;
+        border-color: #0C6687;
+    }
+    Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 40;
+        viewbox-height: 38;
+        fill: #B8E3E9;
+        MoveTo { x: 3; y: 29; }
+        LineTo { x: 8; y: 22; }
+        LineTo { x: 12; y: 27; }
+        LineTo { x: 16; y: 23; }
+        LineTo { x: 21; y: 29; }
+        Close { }
+    }
+    Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 40;
+        viewbox-height: 38;
+        fill: #D7E9F8;
+        stroke: #4F6981;
+        stroke-width: 0.8px;
+        MoveTo { x: 22; y: 17; }
+        LineTo { x: 35; y: 26; }
+        LineTo { x: 29; y: 27; }
+        LineTo { x: 27; y: 34; }
+        LineTo { x: 24; y: 33; }
+        LineTo { x: 26; y: 26; }
+        LineTo { x: 22; y: 24; }
+        Close { }
+    }
+}
+
+export component HistoryGlyph inherits Rectangle {
+    in property <color> tint: Theme.subtle;
+    width: 32px;
+    height: 32px;
+
+    Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 32;
+        viewbox-height: 32;
+        stroke: root.tint;
+        stroke-width: 1.4px;
+        MoveTo { x: 1; y: 10; }
+        LineTo { x: 3; y: 12; }
+        LineTo { x: 6; y: 8; }
+        MoveTo { x: 1; y: 23; }
+        LineTo { x: 3; y: 25; }
+        LineTo { x: 6; y: 21; }
+    }
+    Rectangle { x: 10px; y: 6px; width: 22px; height: 3px; background: root.tint; }
+    Rectangle { x: 10px; y: 14px; width: 18px; height: 3px; background: root.tint; }
+    Rectangle { x: 10px; y: 22px; width: 22px; height: 3px; background: root.tint; }
+}
+
+export component NavItem inherits Rectangle {
+    in property <string> kind;
+    in property <string> label;
+    in property <bool> active: false;
+    callback clicked;
+
+    width: 66px;
+    height: 56px;
+    background: touch.has-hover ? Theme.nav-hover : transparent;
+
+    Rectangle {
+        x: 0px;
+        y: 10px;
+        width: 3px;
+        height: 36px;
+        border-radius: 2px;
+        background: root.active ? Theme.nav-active : transparent;
+    }
+
+    RailIcon {
+        x: 22px;
+        y: 16px;
+        kind: root.kind;
+        tint: root.active ? Theme.nav-active : Theme.sidebar-muted;
+        visible: root.kind != "settings";
+    }
+    if root.kind == "settings" : DeviceGlyph {
+        x: 13px;
+        y: 13px;
+        width: 40px;
+        height: 30px;
+    }
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+
+    if touch.has-hover : Rectangle {
+        x: 76px;
+        y: 10px;
+        z: 20;
+        width: tooltip.preferred-width + 28px;
+        height: 36px;
+        border-radius: 6px;
+        background: Theme.nav-active;
+
+        Path {
+            x: -7px;
+            y: 12px;
+            width: 8px;
+            height: 12px;
+            viewbox-width: 8;
+            viewbox-height: 12;
+            fill: Theme.nav-active;
+            MoveTo { x: 8; y: 0; }
+            LineTo { x: 0; y: 6; }
+            LineTo { x: 8; y: 12; }
+            Close { }
+        }
+        tooltip := Text {
+            x: 14px;
+            y: 0px;
+            height: parent.height;
+            text: root.label;
+            color: #102635;
+            font-family: Theme.font-family;
+            font-size: 14px;
+            font-weight: 600;
+            vertical-alignment: center;
+        }
+    }
+}
+
+export component Toggle inherits Rectangle {
+    in property <string> label;
+    in property <string> description;
+    in property <string> description-line2;
+    in property <bool> checked: false;
+    callback toggled(bool);
+
+    height: 76px;
+    background: transparent;
+    horizontal-stretch: 1;
+
+    HorizontalLayout {
+        width: parent.width;
+        alignment: space-between;
+        spacing: Theme.space-m;
+
+        VerticalLayout {
+            width: parent.width - 52px;
+            alignment: center;
+            spacing: 4px;
+            Text {
+                text: root.label;
+                color: Theme.text;
+                font-family: Theme.font-family;
+                font-size: 15px;
+                font-weight: 600;
+            }
+            Text {
+                text: root.description;
+                color: Theme.muted;
+                font-family: Theme.font-family;
+                font-size: 13px;
+                wrap: word-wrap;
+            }
+            if root.description-line2 != "" : Text {
+                text: root.description-line2;
+                color: Theme.muted;
+                font-family: Theme.font-family;
+                font-size: 13px;
+            }
+        }
+
+        Rectangle {
+            width: 36px;
+            height: 20px;
+            border-radius: 10px;
+            background: root.checked ? #0879D1 : Theme.track;
+            knob := Rectangle {
+                x: root.checked ? parent.width - knob.width - 2px : 2px;
+                y: 2px;
+                width: 16px;
+                height: 16px;
+                border-radius: 8px;
+                background: #FFFFFF;
+                animate x { duration: 120ms; easing: ease-out; }
+            }
+            TouchArea {
+                mouse-cursor: pointer;
+                clicked => { root.toggled(!root.checked); }
+            }
+        }
+    }
+}
+
+export component Field inherits Rectangle {
+    in property <string> label;
+    in property <string> placeholder;
+    in-out property <string> text;
+    in property <bool> multiline: false;
+    callback edited(string);
+
+    height: root.multiline ? 92px : 64px;
+    background: transparent;
+
+    VerticalLayout {
+        spacing: 5px;
+
+        Text {
+            text: root.label;
+            color: Theme.muted;
+            font-family: Theme.font-family;
+            font-size: Theme.small-size;
+            font-weight: 600;
+            visible: root.label != "";
+        }
+
+        Rectangle {
+            vertical-stretch: 1;
+            border-radius: Theme.radius-s;
+            background: Theme.field;
+            border-width: 1px;
+            border-color: input.has-focus ? Theme.accent : Theme.border;
+
+            input := TextInput {
+                x: 11px;
+                y: root.multiline ? 9px : (parent.height - self.height) / 2;
+                width: parent.width - 22px;
+                height: root.multiline ? parent.height - 18px : 20px;
+                text <=> root.text;
+                single-line: !root.multiline;
+                wrap: word-wrap;
+                font-family: Theme.font-family;
+                font-size: Theme.body-size;
+                color: Theme.text;
+                selection-background-color: Theme.accent;
+                selection-foreground-color: #FFFFFF;
+                edited => { root.edited(root.text); }
+            }
+
+            if root.text == "" && !input.has-focus : Text {
+                x: 12px;
+                y: root.multiline ? 10px : (parent.height - self.height) / 2;
+                text: root.placeholder;
+                color: Theme.subtle;
+                font-family: Theme.font-family;
+                font-size: Theme.body-size;
+            }
+        }
+    }
+}
+
+export component EmptyState inherits Rectangle {
+    in property <string> glyph;
+    in property <string> title;
+    in property <string> body;
+    background: transparent;
+
+    VerticalLayout {
+        alignment: center;
+        spacing: Theme.space-s;
+
+        Text {
+            text: root.glyph;
+            color: Theme.subtle;
+            font-size: 30px;
+            horizontal-alignment: center;
+        }
+        Text {
+            text: root.title;
+            color: Theme.text;
+            font-family: Theme.font-family;
+            font-size: Theme.heading-size;
+            font-weight: 600;
+            horizontal-alignment: center;
+        }
+        Text {
+            text: root.body;
+            color: Theme.muted;
+            font-family: Theme.font-family;
+            font-size: Theme.body-size;
+            horizontal-alignment: center;
+            wrap: word-wrap;
+        }
+    }
+}
+
+export component ToastCard inherits Rectangle {
+    in property <string> title;
+    in property <string> body;
+    in property <string> level;
+
+    width: 380px;
+    height: 62px;
+    border-radius: Theme.radius-m;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+    drop-shadow-blur: 18px;
+    drop-shadow-offset-y: 6px;
+    drop-shadow-color: #000000.with-alpha(0.18);
+
+    HorizontalLayout {
+        padding: 11px;
+        spacing: 10px;
+
+        Rectangle {
+            width: 4px;
+            border-radius: 2px;
+            background: root.level == "error" ? Theme.danger
+                : root.level == "warning" ? Theme.warning
+                : root.level == "success" ? Theme.success
+                : Theme.accent;
+        }
+
+        VerticalLayout {
+            vertical-stretch: 1;
+            alignment: center;
+            spacing: 2px;
+            Text {
+                text: root.title;
+                color: Theme.text;
+                font-family: Theme.font-family;
+                font-size: Theme.body-size;
+                font-weight: 600;
+                overflow: elide;
+            }
+            Text {
+                text: root.body;
+                color: Theme.muted;
+                font-family: Theme.font-family;
+                font-size: Theme.small-size;
+                overflow: elide;
+            }
+        }
+    }
+}

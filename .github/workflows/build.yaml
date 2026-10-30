@@ -1,0 +1,37 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-rust:
+    strategy:
+      matrix:
+        platform: [macos-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Rust
+        run: rustup toolchain install stable --component llvm-tools-preview
+      - name: install nextest
+        uses: taiki-e/install-action@nextest
+      - name: install cargo-deny
+        uses: taiki-e/install-action@cargo-deny
+      - uses: Swatinem/rust-cache@v2
+      - name: Format
+        run: cargo fmt -- --check
+      - name: Check
+        run: cargo check --all-targets
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features --tests --benches -- -D warnings
+      - name: Test
+        run: cargo nextest run --all-features
+      - name: Deny
+        run: cargo deny check bans licenses sources

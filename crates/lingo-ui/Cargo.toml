@@ -1,0 +1,18 @@
+[package]
+name = "lingo-ui"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Slint user interface for Lingo"
+
+[dependencies]
+slint.workspace = true
+rfd.workspace = true
+clipboard-files.workspace = true
+flume.workspace = true
+image.workspace = true
+lingo-core = { path = "../lingo-core" }
+
+[build-dependencies]
+slint-build.workspace = true

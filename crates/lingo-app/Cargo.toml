@@ -1,0 +1,27 @@
+[package]
+name = "lingo-app"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Lingo desktop application"
+
+[[bin]]
+name = "lingo"
+path = "src/main.rs"
+
+[dependencies]
+lingo-core = { path = "../lingo-core" }
+lingo-net = { path = "../lingo-net" }
+lingo-ui = { path = "../lingo-ui" }
+quinn.workspace = true
+slint.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+uuid.workspace = true
+flume.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

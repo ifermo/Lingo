@@ -1,0 +1,1194 @@
+export { Theme } from "theme.slint";
+import { Theme } from "theme.slint";
+import {
+    AppButton, DeviceGlyph, DropGlyph, Field, HistoryGlyph, IconButton, NavItem,
+    ProgressBar, RailIcon, StatusPill, ToastCard, Toggle,
+} from "components.slint";
+import { ListView } from "std-widgets.slint";
+
+export struct DeviceItem {
+    id: int,
+    title: string,
+    subtitle: string,
+    initials: string,
+    online: bool,
+    active: bool,
+    tone: int,
+}
+
+export struct TransferItem {
+    id: int,
+    title: string,
+    subtitle: string,
+    status: string,
+    progress: float,
+    speed: string,
+    tone: int,
+    can-pause: bool,
+    can-resume: bool,
+    can-cancel: bool,
+    can-remove: bool,
+    can-delete: bool,
+    can-open: bool,
+}
+
+export struct StagingItem {
+    name: string,
+    meta: string,
+    kind: string,
+}
+
+component Sidebar inherits Rectangle {
+    in property <int> page: 0;
+    callback nav(int);
+
+    width: 66px;
+    background: Theme.sidebar;
+
+    NavItem { y: 28px; kind: "transfer"; label: "Transfer"; active: root.page == 0; clicked => { root.nav(0); } }
+    NavItem { y: 84px; kind: "inbox"; label: "Inbox"; active: root.page == 1; clicked => { root.nav(1); } }
+    NavItem { y: 140px; kind: "sent"; label: "Sent"; active: root.page == 2; clicked => { root.nav(2); } }
+    NavItem { y: root.height - 64px; kind: "settings"; label: "Settings"; active: root.page == 3; clicked => { root.nav(3); } }
+}
+
+component DashedBorder inherits Rectangle {
+    in property <color> dash-color: Theme.border;
+
+    for i in 56 : Rectangle {
+        x: (root.width / 56) * i;
+        y: 0px;
+        width: 4px;
+        height: 1px;
+        background: root.dash-color;
+    }
+    for i in 56 : Rectangle {
+        x: (root.width / 56) * i;
+        y: root.height - 1px;
+        width: 4px;
+        height: 1px;
+        background: root.dash-color;
+    }
+    for i in 10 : Rectangle {
+        x: 0px;
+        y: (root.height / 10) * i;
+        width: 1px;
+        height: 4px;
+        background: root.dash-color;
+    }
+    for i in 10 : Rectangle {
+        x: root.width - 1px;
+        y: (root.height / 10) * i;
+        width: 1px;
+        height: 4px;
+        background: root.dash-color;
+    }
+}
+
+component DropZone inherits Rectangle {
+    in property <bool> dragging: false;
+    callback clicked;
+
+    DashedBorder {
+        width: parent.width;
+        height: parent.height;
+        dash-color: root.dragging ? Theme.accent : Theme.border;
+    }
+
+    HorizontalLayout {
+        padding-left: 22px;
+        padding-right: 16px;
+        spacing: 6px;
+        alignment: start;
+        DropGlyph { width: 40px; height: 38px; }
+        Text {
+            text: "Drag files & directories here";
+            color: Theme.text;
+            font-family: Theme.font-family;
+            font-size: 14px;
+            vertical-alignment: center;
+        }
+    }
+
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+component ActionButton inherits Rectangle {
+    in property <string> kind;
+    in property <bool> selected: false;
+    callback clicked;
+
+    width: 46px;
+    height: 30px;
+    border-radius: 15px;
+    background: root.selected ? Theme.nav-active : Theme.surface;
+
+    RailIcon {
+        x: 11px;
+        y: 3px;
+        kind: root.kind;
+        tint: root.selected ? #173846 : Theme.muted;
+        cutout: root.selected ? Theme.nav-active : Theme.surface;
+    }
+
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+component StagingRow inherits Rectangle {
+    in property <StagingItem> item;
+
+    height: 36px;
+    background: transparent;
+
+    HorizontalLayout {
+        spacing: 10px;
+        alignment: start;
+        Rectangle {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            background: Theme.surface-alt;
+            Text {
+                text: root.item.kind;
+                color: Theme.muted;
+                font-size: 12px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        VerticalLayout {
+            vertical-stretch: 1;
+            alignment: center;
+            spacing: 0px;
+            Text { text: root.item.name; color: Theme.text; font-family: Theme.font-family; font-size: 12px; font-weight: 500; overflow: elide; }
+            Text { text: root.item.meta; color: Theme.subtle; font-family: Theme.font-family; font-size: 10px; }
+        }
+    }
+}
+
+component DeviceChip inherits Rectangle {
+    in property <DeviceItem> device;
+    in property <bool> selected: false;
+    callback clicked;
+
+    width: 172px;
+    height: 42px;
+    border-radius: 7px;
+    background: selected ? Theme.nav-active.with-alpha(0.10) : Theme.field;
+    border-width: 1px;
+    border-color: selected ? Theme.nav-active : Theme.border;
+
+    HorizontalLayout {
+        padding-left: 9px;
+        padding-right: 9px;
+        spacing: 9px;
+        alignment: start;
+        DeviceGlyph { width: 32px; height: 26px; }
+        VerticalLayout {
+            vertical-stretch: 1;
+            alignment: center;
+            spacing: 0px;
+            Text { text: root.device.title; color: Theme.text; font-family: Theme.font-family; font-size: 11px; font-weight: 600; overflow: elide; }
+            Text { text: root.device.subtitle; color: Theme.muted; font-family: Theme.font-family; font-size: 9px; overflow: elide; }
+        }
+        Text {
+            text: root.selected ? "✓" : "";
+            color: Theme.nav-active;
+            font-size: 12px;
+            font-weight: 700;
+            vertical-alignment: center;
+        }
+    }
+
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+component ContactRow inherits Rectangle {
+    in property <DeviceItem> device;
+    callback remove;
+
+    height: 52px;
+    background: transparent;
+
+    HorizontalLayout {
+        spacing: 10px;
+        alignment: space-between;
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: start;
+            DeviceGlyph { width: 34px; height: 28px; }
+            VerticalLayout {
+                vertical-stretch: 1;
+                alignment: center;
+                spacing: 1px;
+                Text { text: root.device.title; color: Theme.text; font-family: Theme.font-family; font-size: 12px; font-weight: 600; }
+                Text { text: root.device.subtitle; color: Theme.muted; font-family: Theme.font-family; font-size: 10px; }
+            }
+        }
+        HorizontalLayout {
+            spacing: 6px;
+            alignment: end;
+            StatusPill { label: root.device.online ? "Online" : "Offline"; tone: root.device.online ? 1 : 0; }
+            IconButton { glyph: "−"; tooltip: "Remove device"; clicked => { root.remove(); } }
+        }
+    }
+}
+
+component TransferRow inherits Rectangle {
+    in property <TransferItem> item;
+    callback action(string, int);
+
+    height: 88px;
+    border-radius: Theme.radius-m;
+    background: Theme.surface;
+
+    HorizontalLayout {
+        padding: 13px;
+        spacing: 12px;
+        alignment: start;
+        Rectangle {
+            width: 38px;
+            height: 38px;
+            border-radius: 19px;
+            background: Theme.surface-alt;
+            Text {
+                text: root.item.title;
+                color: Theme.muted;
+                font-size: 15px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        VerticalLayout {
+            width: parent.width - 76px;
+            vertical-stretch: 1;
+            spacing: 5px;
+            alignment: start;
+            HorizontalLayout {
+                width: parent.width;
+                spacing: 8px;
+                alignment: space-between;
+                Text {
+                    text: root.item.subtitle;
+                    color: Theme.text;
+                    font-family: Theme.font-family;
+                    font-size: Theme.body-size;
+                    font-weight: 600;
+                    overflow: elide;
+                }
+                StatusPill { label: root.item.status; tone: root.item.tone; }
+            }
+            ProgressBar { value: root.item.progress; tone: root.item.tone; }
+            HorizontalLayout {
+                width: parent.width;
+                spacing: 8px;
+                alignment: space-between;
+                Text { text: root.item.speed; color: Theme.muted; font-family: Theme.font-family; font-size: 10px; }
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: end;
+                    if root.item.can-open : IconButton { glyph: "↗"; tooltip: "Reveal"; clicked => { root.action("open", root.item.id); } }
+                    if root.item.can-pause : IconButton { glyph: "II"; tooltip: "Pause"; clicked => { root.action("pause", root.item.id); } }
+                    if root.item.can-resume : IconButton { glyph: "▶"; tooltip: "Resume"; clicked => { root.action("resume", root.item.id); } }
+                    if root.item.can-cancel : IconButton { glyph: "×"; tooltip: "Cancel"; clicked => { root.action("cancel", root.item.id); } }
+                    if root.item.can-delete : IconButton { glyph: "⌫"; tooltip: "Delete files"; clicked => { root.action("delete", root.item.id); } }
+                    if root.item.can-remove : IconButton { glyph: "−"; tooltip: "Remove"; clicked => { root.action("remove", root.item.id); } }
+                }
+            }
+        }
+    }
+}
+
+component ComposePage inherits Rectangle {
+    in property <[StagingItem]> staging;
+    in property <[DeviceItem]> devices;
+    in property <string> note;
+    in property <int> selected-device: -1;
+    in property <bool> has-staging: false;
+    in property <string> summary;
+    in property <bool> dragging: false;
+    callback add-files;
+    callback add-folder;
+    callback paste-files;
+    callback clear-staging;
+    callback note-changed(string);
+    callback select-device(int);
+    callback send;
+    callback manage-devices;
+    callback add-device;
+
+    background: transparent;
+
+    DropZone {
+        x: 26px;
+        y: 0px;
+        width: parent.width - 52px;
+        height: 74px;
+        dragging: root.dragging;
+        clicked => { root.add-files(); }
+    }
+
+    HorizontalLayout {
+        x: 0px;
+        y: 112px;
+        width: parent.width;
+        height: 30px;
+        spacing: 24px;
+        alignment: center;
+        ActionButton { kind: "devices"; selected: true; clicked => { root.manage-devices(); } }
+        ActionButton { kind: "plus"; clicked => { root.add-device(); } }
+    }
+
+    Rectangle {
+        x: 64px;
+        y: 160px;
+        width: parent.width - 128px;
+        height: 1px;
+        background: Theme.border;
+    }
+
+    if !root.has-staging && root.devices.length == 0 : Rectangle {
+        x: 26px;
+        y: 185px;
+        width: parent.width - 52px;
+        height: 118px;
+        border-radius: Theme.radius-m;
+        background: Theme.surface;
+
+        RailIcon {
+            x: 32px;
+            y: 43px;
+            width: 30px;
+            height: 30px;
+            kind: "devices";
+            tint: Theme.subtle;
+            cutout: Theme.surface;
+        }
+        Text {
+            x: 92px;
+            y: 26px;
+            width: parent.width - 112px;
+            text: "Add Devices";
+            color: Theme.text;
+            font-family: Theme.font-family;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        Text {
+            x: 92px;
+            y: 54px;
+            width: parent.width - 112px;
+            text: "Click + to connect with others online. Nearby";
+            color: Theme.muted;
+            font-family: Theme.font-family;
+            font-size: 13px;
+        }
+        Text {
+            x: 92px;
+            y: 74px;
+            width: parent.width - 112px;
+            text: "devices appear automatically.";
+            color: Theme.muted;
+            font-family: Theme.font-family;
+            font-size: 13px;
+        }
+    }
+
+    if !root.has-staging && root.devices.length > 0 : Rectangle {
+        x: 26px;
+        y: 185px;
+        width: parent.width - 52px;
+        height: 118px;
+        border-radius: Theme.radius-m;
+        background: Theme.surface;
+
+        Text {
+            x: 16px;
+            y: 12px;
+            text: "Choose a device";
+            color: Theme.text;
+            font-family: Theme.font-family;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        Flickable {
+            x: 16px;
+            y: 48px;
+            width: parent.width - 32px;
+            height: 46px;
+            content-width: empty-chips.preferred-width;
+            content-height: 42px;
+            empty-chips := HorizontalLayout {
+                spacing: 8px;
+                for device in root.devices : DeviceChip {
+                    device: device;
+                    selected: root.selected-device == device.id;
+                    clicked => { root.select-device(device.id); }
+                }
+            }
+        }
+    }
+
+    if root.has-staging : Rectangle {
+        x: 26px;
+        y: 86px;
+        width: parent.width - 52px;
+        height: 150px;
+        border-radius: Theme.radius-m;
+        background: Theme.surface;
+
+        Text {
+            x: 12px;
+            y: 10px;
+            text: "Staged";
+            color: Theme.text;
+            font-family: Theme.font-family;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        HorizontalLayout {
+            x: parent.width - 164px;
+            y: 4px;
+            width: 156px;
+            height: 30px;
+            spacing: 2px;
+            alignment: end;
+            IconButton { glyph: "+"; tooltip: "Add files"; clicked => { root.add-files(); } }
+            IconButton { glyph: "F"; tooltip: "Add folder"; clicked => { root.add-folder(); } }
+            IconButton { glyph: "P"; tooltip: "Paste files"; clicked => { root.paste-files(); } }
+            IconButton { glyph: "×"; tooltip: "Clear staging"; clicked => { root.clear-staging(); } }
+        }
+        ListView {
+            x: 12px;
+            y: 38px;
+            width: parent.width - 24px;
+            height: parent.height - 46px;
+            for item in root.staging : StagingRow {
+                item: item;
+                width: parent.width;
+            }
+        }
+    }
+
+    if root.has-staging : Rectangle {
+        x: 26px;
+        y: 248px;
+        width: parent.width - 52px;
+        height: 92px;
+        border-radius: Theme.radius-m;
+        background: Theme.surface;
+        Field {
+            x: 12px;
+            y: 7px;
+            width: parent.width - 24px;
+            height: parent.height - 14px;
+            label: "Message";
+            placeholder: "Add a short note for the receiver...";
+            text: root.note;
+            multiline: true;
+            edited(text) => { root.note-changed(text); }
+        }
+    }
+
+    if root.has-staging : Rectangle {
+        x: 26px;
+        y: 352px;
+        width: parent.width - 52px;
+        height: 108px;
+        border-radius: Theme.radius-m;
+        background: Theme.surface;
+        Text {
+            x: 14px;
+            y: 10px;
+            text: "Send to";
+            color: Theme.text;
+            font-family: Theme.font-family;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        if root.devices.length == 0 : Text {
+            x: 14px;
+            y: 46px;
+            text: "No devices yet. Click + to add one.";
+            color: Theme.muted;
+            font-family: Theme.font-family;
+            font-size: 11px;
+        }
+        if root.devices.length > 0 : Flickable {
+            x: 14px;
+            y: 42px;
+            width: parent.width - 28px;
+            height: 46px;
+            content-width: staging-chips.preferred-width;
+            content-height: 42px;
+            staging-chips := HorizontalLayout {
+                spacing: 8px;
+                for device in root.devices : DeviceChip {
+                    device: device;
+                    selected: root.selected-device == device.id;
+                    clicked => { root.select-device(device.id); }
+                }
+            }
+        }
+    }
+
+    if root.has-staging : Text {
+        x: 26px;
+        y: 474px;
+        width: parent.width - 52px;
+        text: root.summary;
+        color: Theme.muted;
+        font-family: Theme.font-family;
+        font-size: 11px;
+    }
+
+    Rectangle {
+        x: 26px;
+        y: parent.height - 72px;
+        width: parent.width - 52px;
+        height: 47px;
+        border-radius: Theme.radius-s;
+        border-width: 1px;
+        border-color: root.has-staging && root.selected-device >= 0 ? Theme.accent : Theme.border;
+        background: root.has-staging && root.selected-device >= 0
+            ? (send-touch.has-hover ? Theme.accent-hover : Theme.accent)
+            : transparent;
+        Text {
+            text: "Send";
+            color: root.has-staging && root.selected-device >= 0 ? Theme.accent-text : Theme.subtle;
+            font-family: Theme.font-family;
+            font-size: 14px;
+            font-weight: 600;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+        send-touch := TouchArea {
+            enabled: root.has-staging && root.selected-device >= 0;
+            mouse-cursor: pointer;
+            clicked => { root.send(); }
+        }
+    }
+}
+
+component HistoryEmptyCard inherits Rectangle {
+    in property <string> body-line1;
+    in property <string> body-line2;
+
+    height: 118px;
+    border-radius: Theme.radius-m;
+    background: Theme.surface;
+
+    HistoryGlyph {
+        x: 30px;
+        y: 43px;
+        tint: Theme.subtle;
+    }
+    Text {
+        x: 92px;
+        y: 26px;
+        width: parent.width - 112px;
+        text: "Nothing here yet";
+        color: Theme.text;
+        font-family: Theme.font-family;
+        font-size: 16px;
+        font-weight: 500;
+    }
+    Text {
+        x: 92px;
+        y: 54px;
+        width: parent.width - 112px;
+        text: root.body-line1;
+        color: Theme.muted;
+        font-family: Theme.font-family;
+        font-size: 13px;
+    }
+    Text {
+        x: 92px;
+        y: 74px;
+        width: parent.width - 112px;
+        text: root.body-line2;
+        color: Theme.muted;
+        font-family: Theme.font-family;
+        font-size: 13px;
+    }
+}
+
+component TransfersPage inherits Rectangle {
+    in property <[TransferItem]> items;
+    in property <string> empty-body-line1;
+    in property <string> empty-body-line2;
+    callback action(string, int);
+
+    background: transparent;
+
+    if root.items.length == 0 : HistoryEmptyCard {
+        x: 26px;
+        y: 22px;
+        width: parent.width - 52px;
+        body-line1: root.empty-body-line1;
+        body-line2: root.empty-body-line2;
+    }
+
+    if root.items.length > 0 : ListView {
+        x: 26px;
+        y: 22px;
+        width: parent.width - 52px;
+        height: parent.height - 44px;
+        for item in root.items : TransferRow {
+            item: item;
+            width: parent.width - 2px;
+            action(kind, id) => { root.action(kind, id); }
+        }
+    }
+}
+
+component SettingsPage inherits Rectangle {
+    in property <string> owner;
+    in property <string> device-name;
+    in property <string> account-label;
+    in property <bool> guest: false;
+    in property <bool> online: false;
+    in property <bool> background-mode: false;
+    callback edit-device;
+    callback account-action;
+    callback set-background(bool);
+
+    background: transparent;
+
+    Rectangle {
+        x: 26px;
+        y: 0px;
+        width: parent.width - 52px;
+        height: 60px;
+        border-radius: Theme.radius-s;
+        border-width: 1px;
+        border-color: Theme.border;
+        background: touch.has-hover ? Theme.surface : transparent;
+
+        DeviceGlyph { x: 15px; y: 15px; width: 40px; height: 30px; }
+        Text {
+            x: 60px;
+            y: 14px;
+            width: parent.width - 76px;
+            text: root.owner == "" ? "Set up this Mac" : root.owner;
+            color: Theme.text;
+            font-family: Theme.font-family;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        Text {
+            x: 60px;
+            y: 34px;
+            width: parent.width - 76px;
+            text: root.device-name == "" ? "Choose your name and device name" : root.device-name;
+            color: Theme.muted;
+            font-family: Theme.font-family;
+            font-size: 13px;
+        }
+        touch := TouchArea {
+            mouse-cursor: pointer;
+            clicked => { root.edit-device(); }
+        }
+    }
+
+    Text {
+        x: 0px;
+        y: 96px;
+        width: parent.width;
+        text: "ONLINE TRANSFERS";
+        color: Theme.subtle;
+        font-family: Theme.font-family;
+        font-size: 14px;
+        horizontal-alignment: center;
+    }
+
+    Rectangle {
+        x: 26px;
+        y: 127px;
+        width: parent.width - 52px;
+        height: 78px;
+        border-radius: Theme.radius-s;
+        border-width: 1px;
+        border-color: Theme.border;
+
+        Rectangle {
+            x: 15px;
+            y: 22px;
+            width: 10px;
+            height: 10px;
+            border-radius: 5px;
+            background: root.online ? Theme.success : Theme.subtle;
+        }
+        Text {
+            x: 34px;
+            y: 20px;
+            width: parent.width - 50px;
+            text: root.guest ? "Guest mode" : (root.online ? root.account-label : "Offline mode");
+            color: Theme.text;
+            font-family: Theme.font-family;
+            font-size: 15px;
+            font-weight: 600;
+            overflow: elide;
+        }
+        Text {
+            x: 15px;
+            y: 46px;
+            width: parent.width - 30px;
+            text: root.guest
+                ? "You can transfer online, but only with people who have data."
+                : (root.online ? "Your account is ready for online transfers." : "Log in to connect with your other devices online.");
+            color: Theme.muted;
+            font-family: Theme.font-family;
+            font-size: 13px;
+            overflow: elide;
+        }
+    }
+
+    AppButton {
+        x: 26px;
+        y: 220px;
+        width: parent.width - 52px;
+        height: 44px;
+        label: !root.online ? "Continue as guest" : (root.guest ? "Log in or sign up" : "Sign out");
+        clicked => { root.account-action(); }
+    }
+
+    Text {
+        x: 0px;
+        y: 303px;
+        width: parent.width;
+        text: "SYSTEM";
+        color: Theme.subtle;
+        font-family: Theme.font-family;
+        font-size: 14px;
+        horizontal-alignment: center;
+    }
+
+    Rectangle {
+        x: 64px;
+        y: 333px;
+        width: parent.width - 128px;
+        height: 1px;
+        background: Theme.border;
+    }
+
+    Toggle {
+        x: 26px;
+        y: 341px;
+        width: parent.width - 52px;
+        height: 76px;
+        label: "Run in background";
+        description: "Keep running in the dock after you close the window or";
+        description-line2: "restart your computer.";
+        checked: root.background-mode;
+        toggled(value) => { root.set-background(value); }
+    }
+
+    Text {
+        x: 26px;
+        y: 439px;
+        text: "Lingo v0.1.0";
+        color: Theme.text;
+        font-family: Theme.font-family;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+}
+
+export component AppWindow inherits Window {
+    title: "Lingo";
+    width: 540px;
+    height: 700px;
+    background: Theme.bg;
+
+    in-out property <int> page: 0;
+    in-out property <[DeviceItem]> devices: [];
+    in-out property <[TransferItem]> inbox: [];
+    in-out property <[TransferItem]> sent: [];
+    in-out property <[StagingItem]> staging: [];
+    in-out property <bool> has-staging: false;
+    in-out property <string> staging-summary: "";
+    in-out property <string> note: "";
+    in-out property <string> owner: "";
+    in-out property <string> device-name: "";
+    in-out property <string> variant: "macbook";
+    in-out property <string> avatar-color: "green";
+    in-out property <string> link-code: "";
+    in-out property <bool> setup: false;
+    in-out property <bool> guest: false;
+    in-out property <string> account-label: "Offline";
+    in-out property <bool> online: false;
+    in-out property <bool> background-mode: false;
+    in-out property <bool> notifications: true;
+    in-out property <int> selected-device: -1;
+    in-out property <bool> has-toast: false;
+    in-out property <string> toast-title: "";
+    in-out property <string> toast-body: "";
+    in-out property <string> toast-level: "info";
+    in-out property <bool> show-incoming: false;
+    in-out property <int> incoming-id: -1;
+    in-out property <string> incoming-title: "";
+    in-out property <string> incoming-subtitle: "";
+    property <bool> show-device-editor: false;
+    property <bool> show-device-manager: false;
+
+    callback nav(int);
+    callback add-files;
+    callback add-folder;
+    callback paste-files;
+    callback clear-staging;
+    callback note-changed(string);
+    callback select-device(int);
+    callback send;
+    callback transfer-action(string, int);
+    callback save-avatar(string, string, string, string);
+    callback became-guest;
+    callback login;
+    callback logout;
+    callback add-device(string);
+    callback remove-device(int);
+    callback set-background(bool);
+    callback set-notifications(bool);
+    callback accept-incoming(int);
+    callback decline-incoming(int);
+    callback files-dropped(data-transfer);
+    callback quit;
+
+    main := Rectangle {
+        x: 66px;
+        y: 0px;
+        width: root.width - 66px;
+        height: root.height;
+        background: Theme.bg;
+
+        Text {
+            x: 0px;
+            y: 19px;
+            width: parent.width;
+            height: 24px;
+            text: root.page == 0 ? "TRANSFER"
+                : root.page == 1 ? "INBOX"
+                : root.page == 2 ? "SENT"
+                : "THIS DEVICE";
+            color: Theme.subtle;
+            font-family: Theme.font-family;
+            font-size: Theme.title-size;
+            font-weight: 400;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+
+        if root.page == 1 || root.page == 2 : Rectangle {
+            x: 64px;
+            y: 52px;
+            width: parent.width - 128px;
+            height: 1px;
+            background: Theme.border;
+        }
+
+        if root.page == 0 : ComposePage {
+            x: 0px;
+            y: 53px;
+            width: parent.width;
+            height: parent.height - 53px;
+            staging: root.staging;
+            devices: root.devices;
+            note: root.note;
+            selected-device: root.selected-device;
+            has-staging: root.has-staging;
+            summary: root.staging-summary;
+            dragging: drop-overlay.has-drag;
+            add-files => { root.add-files(); }
+            add-folder => { root.add-folder(); }
+            paste-files => { root.paste-files(); }
+            clear-staging => { root.clear-staging(); }
+            note-changed(text) => { root.note-changed(text); }
+            select-device(id) => { root.select-device(id); }
+            send => { root.send(); }
+            manage-devices => { root.nav(3); }
+            add-device => { root.show-device-manager = true; }
+        }
+
+        if root.page == 1 : TransfersPage {
+            x: 0px;
+            y: 53px;
+            width: parent.width;
+            height: parent.height - 53px;
+            items: root.inbox;
+            empty-body-line1: "Expecting something? Start the transfer from the";
+            empty-body-line2: "sending device.";
+            action(kind, id) => { root.transfer-action(kind, id); }
+        }
+
+        if root.page == 2 : TransfersPage {
+            x: 0px;
+            y: 53px;
+            width: parent.width;
+            height: parent.height - 53px;
+            items: root.sent;
+            empty-body-line1: "This is where your outgoing transfers would go... If";
+            empty-body-line2: "you had any.";
+            action(kind, id) => { root.transfer-action(kind, id); }
+        }
+
+        if root.page == 3 : SettingsPage {
+            x: 0px;
+            y: 53px;
+            width: parent.width;
+            height: parent.height - 53px;
+            owner: root.owner;
+            device-name: root.device-name;
+            account-label: root.account-label;
+            guest: root.guest;
+            online: root.online;
+            background-mode: root.background-mode;
+            edit-device => { root.show-device-editor = true; }
+            account-action => {
+                if !root.online {
+                    root.became-guest();
+                } else if root.guest {
+                    root.login();
+                } else {
+                    root.logout();
+                }
+            }
+            set-background(value) => { root.set-background(value); }
+        }
+
+        drop-overlay := DropArea {
+            can-drop(event) => { return DragAction.copy; }
+            dropped(event) => { root.files-dropped(event.data); return DragAction.copy; }
+        }
+    }
+
+    Sidebar {
+        x: 0px;
+        y: 0px;
+        height: root.height;
+        page: root.page;
+        nav(page) => { root.nav(page); }
+    }
+
+    if root.show-device-editor : Rectangle {
+        x: 0px;
+        y: 0px;
+        width: root.width;
+        height: root.height;
+        background: Theme.overlay;
+
+        Rectangle {
+            x: (parent.width - 360px) / 2;
+            y: (parent.height - 304px) / 2;
+            width: 360px;
+            height: 304px;
+            border-radius: Theme.radius-l;
+            background: Theme.surface;
+            border-width: 1px;
+            border-color: Theme.border;
+
+            Text {
+                x: 20px;
+                y: 18px;
+                text: "This device";
+                color: Theme.text;
+                font-family: Theme.font-family;
+                font-size: 18px;
+                font-weight: 600;
+            }
+            Field {
+                x: 20px;
+                y: 58px;
+                width: 320px;
+                label: "Your name";
+                placeholder: "Ken";
+                text: root.owner;
+                edited(text) => { root.owner = text; }
+            }
+            Field {
+                x: 20px;
+                y: 130px;
+                width: 320px;
+                label: "Device name";
+                placeholder: "Macbook";
+                text: root.device-name;
+                edited(text) => { root.device-name = text; }
+            }
+            HorizontalLayout {
+                x: 20px;
+                y: 230px;
+                width: 320px;
+                height: 40px;
+                spacing: 10px;
+                alignment: end;
+                AppButton { label: "Cancel"; primary: false; clicked => { root.show-device-editor = false; } }
+                AppButton {
+                    label: "Save changes";
+                    enabled: root.owner != "" && root.device-name != "";
+                    clicked => {
+                        root.save-avatar(root.owner, root.device-name, root.variant, root.avatar-color);
+                        root.show-device-editor = false;
+                    }
+                }
+            }
+        }
+    }
+
+    if root.show-device-manager : Rectangle {
+        x: 0px;
+        y: 0px;
+        width: root.width;
+        height: root.height;
+        background: Theme.overlay;
+
+        Rectangle {
+            x: (parent.width - 390px) / 2;
+            y: (parent.height - 420px) / 2;
+            width: 390px;
+            height: 420px;
+            border-radius: Theme.radius-l;
+            background: Theme.surface;
+            border-width: 1px;
+            border-color: Theme.border;
+
+            Text {
+                x: 20px;
+                y: 18px;
+                text: "Devices";
+                color: Theme.text;
+                font-family: Theme.font-family;
+                font-size: 18px;
+                font-weight: 600;
+            }
+            Field {
+                x: 20px;
+                y: 54px;
+                width: 256px;
+                label: "Add a device";
+                placeholder: "Link code";
+                text: root.link-code;
+                edited(text) => { root.link-code = text; }
+            }
+            AppButton {
+                x: 286px;
+                y: 77px;
+                width: 84px;
+                height: 40px;
+                label: "Add";
+                enabled: root.link-code != "";
+                clicked => {
+                    root.add-device(root.link-code);
+                    root.link-code = "";
+                }
+            }
+            Rectangle {
+                x: 20px;
+                y: 132px;
+                width: 350px;
+                height: 1px;
+                background: Theme.border;
+            }
+            if root.devices.length == 0 : Text {
+                x: 20px;
+                y: 174px;
+                width: 350px;
+                text: "Nearby devices appear automatically. You can also add one with a link code.";
+                color: Theme.muted;
+                font-family: Theme.font-family;
+                font-size: 12px;
+                horizontal-alignment: center;
+                wrap: word-wrap;
+            }
+            if root.devices.length > 0 : ListView {
+                x: 20px;
+                y: 144px;
+                width: 350px;
+                height: 208px;
+                for device in root.devices : ContactRow {
+                    device: device;
+                    width: parent.width;
+                    remove => { root.remove-device(device.id); }
+                }
+            }
+            AppButton {
+                x: 20px;
+                y: 364px;
+                width: 350px;
+                label: "Done";
+                primary: false;
+                clicked => { root.show-device-manager = false; }
+            }
+        }
+    }
+
+    if root.show-incoming : Rectangle {
+        x: 0px;
+        y: 0px;
+        width: root.width;
+        height: root.height;
+        background: Theme.overlay;
+
+        Rectangle {
+            width: 420px;
+            height: 224px;
+            x: (root.width - 420px) / 2;
+            y: (root.height - 224px) / 2;
+            border-radius: Theme.radius-l;
+            background: Theme.surface;
+            border-width: 1px;
+            border-color: Theme.border;
+
+            VerticalLayout {
+                padding: 22px;
+                spacing: 10px;
+                Text { text: "Incoming transfer"; color: Theme.text; font-family: Theme.font-family; font-size: 20px; font-weight: 700; }
+                Text { text: root.incoming-title; color: Theme.text; font-family: Theme.font-family; font-size: Theme.body-size; font-weight: 600; }
+                Text { text: root.incoming-subtitle; color: Theme.muted; font-family: Theme.font-family; font-size: 11px; wrap: word-wrap; }
+                Rectangle { vertical-stretch: 1; }
+                HorizontalLayout {
+                    spacing: 10px;
+                    alignment: end;
+                    AppButton { label: "Decline"; primary: false; clicked => { root.decline-incoming(root.incoming-id); } }
+                    AppButton { label: "Choose folder"; clicked => { root.accept-incoming(root.incoming-id); } }
+                }
+            }
+        }
+    }
+
+    if root.has-toast : ToastCard {
+        x: (root.width - 380px) / 2;
+        y: root.height - 86px;
+        title: root.toast-title;
+        body: root.toast-body;
+        level: root.toast-level;
+    }
+}
+
+export component Tray inherits SystemTrayIcon {
+    in property <image> glyph;
+    icon: root.glyph;
+    tooltip: "Lingo";
+
+    Menu {
+        MenuItem {
+            title: "Open Lingo";
+            activated => { root.open-requested(); }
+        }
+        MenuSeparator { }
+        MenuItem {
+            title: "Quit";
+            activated => { root.quit-requested(); }
+        }
+    }
+
+    callback open-requested();
+    callback quit-requested();
+}
